@@ -1,0 +1,330 @@
+package com.library;
+import java.io.IOException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.*;
+
+@WebServlet("/LoginServlet")
+public class LoginServlet extends HttpServlet {
+    private static final long serialVersionUID = 1L;
+
+    protected void doPost(HttpServletRequest request, HttpServletResponse response) 
+            throws ServletException, IOException {
+
+        String username = request.getParameter("username");
+        String password = request.getParameter("password");
+
+        try {
+            Connection conn = DBConnection.getConnection();
+            String sql = "SELECT * FROM users WHERE username = ? AND password = ?";
+            PreparedStatement ps = conn.prepareStatement(sql);
+            ps.setString(1, username);
+            ps.setString(2, password);
+
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                HttpSession session = request.getSession();
+                session.setAttribute("username", username);
+                response.sendRedirect("home.jsp");
+            } else {
+                response.setContentType("text/html");
+                response.getWriter().println("<script>alert('Login failed: Invalid username or password'); window.location='login.jsp';</script>");
+            }
+            rs.close();
+            ps.close();
+            conn.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.setContentType("text/html");
+            response.getWriter().println("<script>alert('Error occurred during login. Please try again.'); window.location='login.jsp';</script>");
+        }
+    }
+}
+package com.library;
+import java.io.IOException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.*;
+
+@WebServlet("/LoginServlet")
+public class LoginServlet extends HttpServlet {
+    private static final long serialVersionUID = 1L;
+
+    protected void doPost(HttpServletRequest request, HttpServletResponse response) 
+            throws ServletException, IOException {
+
+        String username = request.getParameter("username");
+        String password = request.getParameter("password");
+
+        try {
+            Connection conn = DBConnection.getConnection();
+            String sql = "SELECT * FROM users WHERE username = ? AND password = ?";
+            PreparedStatement ps = conn.prepareStatement(sql);
+            ps.setString(1, username);
+            ps.setString(2, password);
+
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                HttpSession session = request.getSession();
+                session.setAttribute("username", username);
+                response.sendRedirect("home.jsp");
+            } else {
+                response.setContentType("text/html");
+                response.getWriter().println("<script>alert('Login failed: Invalid username or password'); window.location='login.jsp';</script>");
+            }
+            rs.close();
+            ps.close();
+            conn.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.setContentType("text/html");
+            response.getWriter().println("<script>alert('Error occurred during login. Please try again.'); window.location='login.jsp';</script>");
+        }
+    }
+}
+package com.library;
+
+import java.io.IOException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+
+import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
+
+@WebServlet("/SignupServlet")
+public class SignupServlet extends HttpServlet {
+    private static final long serialVersionUID = 1L;
+
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
+        String username = request.getParameter("username");
+        String password = request.getParameter("password");
+
+        try {
+            Connection conn = DBConnection.getConnection();
+            
+            // Prepare SQL query to insert user details into the database
+            String sql = "INSERT INTO users (username, password) VALUES (?, ?)";
+            PreparedStatement ps = conn.prepareStatement(sql);
+            ps.setString(1, username);
+            ps.setString(2, password);
+
+            // Execute the query and check if the insertion was successful
+            int rows = ps.executeUpdate();
+
+            if (rows > 0) {
+                HttpSession session = request.getSession();
+                session.setAttribute("username", username);
+                
+                response.sendRedirect("home.jsp");
+            } else {
+                // In case signup fails
+                response.getWriter().println("<script>alert('Signup failed! Try again.'); window.location='signup.jsp';</script>");
+            }
+
+            ps.close();
+            conn.close();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            // Display error message
+            response.getWriter().println("<script>alert('Error: " + e.getMessage() + "'); window.location='signup.jsp';</script>");
+        }
+    }
+}
+package com.library;
+
+import java.io.IOException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import jakarta.servlet.RequestDispatcher;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.*;
+
+@WebServlet("/AddBookServlet")
+public class AddBookServlet extends HttpServlet {
+    private static final long serialVersionUID = 1L;
+
+    protected void doPost(HttpServletRequest request, HttpServletResponse response) 
+            throws ServletException, IOException {
+
+        String title = request.getParameter("title");
+        String authorName = request.getParameter("author");
+        int quantity = Integer.parseInt(request.getParameter("quantity"));
+
+        try {
+            // Get database connection
+            Connection conn = DBConnection.getConnection();
+            String sql = "INSERT INTO books (title, author, quantity) VALUES (?, ?, ?)";
+            PreparedStatement ps = conn.prepareStatement(sql);
+            ps.setString(1, title);
+            ps.setString(2, authorName);
+            ps.setInt(3, quantity);
+
+            int rows = ps.executeUpdate();
+
+            if (rows > 0) {
+                // Book successfully added, set success message
+                request.setAttribute("alertMessage", "Book added successfully!");                
+            } else {
+                // Failure to add book
+                request.setAttribute("alertMessage", "Failed to add book! Please try again.");
+            }
+
+            ps.close();
+            conn.close();
+
+            // Forward to home.jsp to show alert message
+            RequestDispatcher dispatcher = request.getRequestDispatcher("home.jsp");
+            dispatcher.forward(request, response); // Forward to home.jsp
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            // In case of error, show the error message
+            request.setAttribute("alertMessage", "Error: " + e.getMessage());
+            RequestDispatcher dispatcher = request.getRequestDispatcher("home.jsp");
+            dispatcher.forward(request, response); // Forward to home.jsp
+        }
+    }
+}
+package com.library;
+
+import java.io.IOException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.*;
+
+@WebServlet("/DeleteBookServlet")
+public class DeleteBookServlet extends HttpServlet {
+    private static final long serialVersionUID = 1L;
+
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
+        String bookId = request.getParameter("id");
+        String bookTitle = request.getParameter("title");
+
+        try {
+            // Get database connection
+            Connection conn = DBConnection.getConnection();
+            String sql = "DELETE FROM books WHERE id = ? AND title = ?";
+            PreparedStatement ps = conn.prepareStatement(sql);
+            ps.setString(1, bookId);
+            ps.setString(2, bookTitle);
+
+            int rows = ps.executeUpdate();
+
+            if (rows > 0) {
+                // Successfully deleted
+                request.setAttribute("alertMessage", "Book deleted successfully!");
+                request.getRequestDispatcher("home.jsp").forward(request, response);
+            } else {
+                // No book found to delete
+                request.setAttribute("alertMessage", "No book found with the given ID and Title.");
+                request.getRequestDispatcher("delete_book.jsp").forward(request, response);
+            }
+
+            ps.close();
+            conn.close();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            request.setAttribute("alertMessage", "Error: " + e.getMessage());
+            request.getRequestDispatcher("delete_book.jsp").forward(request, response);
+        }
+    }
+}
+package com.library;
+import java.io.IOException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import jakarta.servlet.RequestDispatcher;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.*;
+
+@WebServlet("/UpdateBookServlet")
+public class UpdateBookServlet extends HttpServlet {
+    private static final long serialVersionUID = 1L;
+
+    protected void doPost(HttpServletRequest request, HttpServletResponse response) 
+            throws ServletException, IOException {
+
+        // Get book details from the form
+        int bookId = Integer.parseInt(request.getParameter("bookId"));
+        String title = request.getParameter("title");
+        String author = request.getParameter("author");
+        int quantity = Integer.parseInt(request.getParameter("quantity"));
+
+        try {
+            // Get connection from DB
+            Connection conn = DBConnection.getConnection();
+            String sql = "UPDATE books SET title = ?, author = ?, quantity = ? WHERE id = ?";
+            PreparedStatement ps = conn.prepareStatement(sql);
+            ps.setString(1, title);
+            ps.setString(2, author);
+            ps.setInt(3, quantity);
+            ps.setInt(4, bookId);
+
+            int rows = ps.executeUpdate();
+
+            if (rows > 0) {
+                // Book successfully updated
+                request.setAttribute("alertMessage", "Book updated successfully!");
+                RequestDispatcher dispatcher = request.getRequestDispatcher("home.jsp");
+                dispatcher.forward(request, response);
+            } else {
+                // Failure case
+                request.setAttribute("alertMessage", "Book not found! Please check the Book ID.");
+                RequestDispatcher dispatcher = request.getRequestDispatcher("update_book.jsp");
+                dispatcher.forward(request, response);
+            }
+
+            ps.close();
+            conn.close();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            // In case of error, forward with error message
+            request.setAttribute("alertMessage", "Error: " + e.getMessage());
+            RequestDispatcher dispatcher = request.getRequestDispatcher("update_book.jsp");
+            dispatcher.forward(request, response);
+        }
+    }
+}
+package com.library;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+
+public class DBConnection {
+    private static final String URL = "jdbc:mysql://localhost:3306/librarydb";
+    private static final String USER = "root"; 
+    private static final String PASS = "yashika05";
+
+    public static Connection getConnection() {
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            return DriverManager.getConnection(URL, USER, PASS);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+}
